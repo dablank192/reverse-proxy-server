@@ -2,19 +2,23 @@ using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using Microsoft.VisualBasic;
 
 namespace reverse_proxy_server;
 
-public class TCPSocketServer
+public partial class TCPSocketServer
 {
+    private const string backendAddress = "127.0.0.1"; 
+    private const int backendPort = 5169;
+
+    private const int proxyPort = 5000;
+
     public async Task Main()
     {
-        var ipAddress = "0.0.0.0";
-        var port = 5000;
 
         var serverEndpoint = new IPEndPoint(
-            address: IPAddress.Parse(ipAddress),
-            port: port
+            address: IPAddress.Any,
+            port: proxyPort
         );
 
         using var listenerSocket = new Socket(
@@ -26,7 +30,7 @@ public class TCPSocketServer
         listenerSocket.Bind(serverEndpoint);
         listenerSocket.Listen(backlog: 100);
 
-        System.Console.WriteLine($"Server is listening at: {port}");
+        System.Console.WriteLine($"Server is listening at: {proxyPort}");
 
         while (true)
         {
@@ -42,38 +46,36 @@ public class TCPSocketServer
     {
         using (clientSocket)
         {
+            using var backendSocket = new Socket(
+                AddressFamily.InterNetwork,
+                SocketType.Stream,
+                ProtocolType.Tcp
+            );
+
             try
             {
-                while (true)
-                {
-                    byte[] buffer = new byte[4000];
+                await backendSocket.ConnectAsync(
+                    backendAddress,
+                    backendPort
+                );
 
-                    var receivedByte = await clientSocket.ReceiveAsync(
-                        buffer,
-                        SocketFlags.None
-                    );
+                System.Console.WriteLine($"Connected: {clientSocket.RemoteEndPoint} - {backendSocket.RemoteEndPoint}");
 
-                    if(receivedByte == 0)
-                    {
-                        System.Console.WriteLine("Client disconnected");
+                var clientToBackend = PumbAsync(clientSocket, backendSocket);
+                var backendToClient = PumbAsync(backendSocket, clientSocket);
 
-                        break;
-                    }
-
-                    string message = Encoding.UTF8.GetString(buffer, 0, receivedByte);
-
-                    System.Console.WriteLine($"Client's message: {message}");
-
-                    var response = Encoding.UTF8.GetBytes($"Echo:{message}");
-
-                    await clientSocket.SendAsync(response, SocketFlags.None);
-                }
+                await Task.WhenAny(clientToBackend, backendToClient);
             }
             catch(SocketException ex)
             {
-                System.Console.WriteLine($"Socket Error occur: {ex}");
+                System.Console.WriteLine($"Socket error occur: {ex}");
             }
 
+            finally
+            {
+                SafeShutdown(clientSocket);
+                SafeShutdown(backendSocket);
+            }
         }
     }
 }

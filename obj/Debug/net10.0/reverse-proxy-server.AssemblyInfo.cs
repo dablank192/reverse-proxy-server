@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("reverse-proxy-server")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+eb01368f70ca4b0dffbd4fc96cf84011f398dc4d")]
 [assembly: System.Reflection.AssemblyProductAttribute("reverse-proxy-server")]
 [assembly: System.Reflection.AssemblyTitleAttribute("reverse-proxy-server")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
