@@ -6,5 +6,5 @@ public class RoutingTable
 {
     public string PathPrefix {get; set;} = "";
     public string BackendHost {get; set;} = "";
-    public string BackendPort {get; set;} = "";
+    public int BackendPort {get; set;}
 }

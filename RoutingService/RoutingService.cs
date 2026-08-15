@@ -22,7 +22,7 @@ public static class RoutingService
         return prefix;
     }
 
-    public static async Task<(byte[], int byteRead)> GetRequestLine(Socket clientSocket)
+    public static async Task<(byte[] buffer, int byteRead)> GetRequestLine(Socket clientSocket)
     {
         byte[] buffer = new byte[9000];
 
@@ -31,7 +31,7 @@ public static class RoutingService
 
         while (true)
         {
-            var byteRead = await clientSocket.ReceiveAsync(buffer, SocketFlags.None);
+            var byteRead = await clientSocket.ReceiveAsync(buffer.AsMemory(totalByteRead), SocketFlags.None);
             
             if(byteRead == 0) throw new IOException("Client close connection");
 

@@ -11,11 +11,11 @@ public class Program
             {
                 PathPrefix = "/api/",
                 BackendHost = "127.0.0.1",
-                BackendPort = "5169"
+                BackendPort = 5169
             }
         };
         
-        var tcpServer = new TCPSocketServer();
+        var tcpServer = new TCPSocketServer(routingTables: routes);
         await tcpServer.Main();
     }
 }

@@ -3,15 +3,18 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using Microsoft.VisualBasic;
+using reverse_proxy_server.RoutingService;
 
 namespace reverse_proxy_server;
 
-public partial class TCPSocketServer
+public partial class TCPSocketServer(
+    List<RoutingTable> routingTables
+)
 {
-    private const string backendAddress = "127.0.0.1"; 
-    private const int backendPort = 5169;
-
+    // private const string backendAddress = "127.0.0.1"; 
+    // private const int backendPort = 5169;
     private const int proxyPort = 5000;
+
 
     public async Task Main()
     {
@@ -46,6 +49,16 @@ public partial class TCPSocketServer
     {
         using (clientSocket)
         {
+            var requestLine = await RoutingService.RoutingService.GetRequestLine(clientSocket);
+            var requestPath = RoutingService.RoutingService.GetRequestPath(
+                requestLine.buffer,
+                requestLine.byteRead
+            );
+            var route = RoutingService.RoutingService.GetRoute(
+                prefix: requestPath,
+                routingTable: routingTables
+            );
+            
             using var backendSocket = new Socket(
                 AddressFamily.InterNetwork,
                 SocketType.Stream,
@@ -55,16 +68,22 @@ public partial class TCPSocketServer
             try
             {
                 await backendSocket.ConnectAsync(
-                    backendAddress,
-                    backendPort
+                    route.BackendHost,
+                    route.BackendPort
                 );
 
                 System.Console.WriteLine($"Connected: {clientSocket.RemoteEndPoint} - {backendSocket.RemoteEndPoint}");
+
+                await SendAllAsync(
+                    backendSocket,
+                    requestLine.buffer.AsMemory(0, requestLine.byteRead)
+                );
 
                 var clientToBackend = PumbAsync(clientSocket, backendSocket);
                 var backendToClient = PumbAsync(backendSocket, clientSocket);
 
                 await Task.WhenAny(clientToBackend, backendToClient);
+
             }
             catch(SocketException ex)
             {
