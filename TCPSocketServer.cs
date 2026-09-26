@@ -49,11 +49,16 @@ public partial class TCPSocketServer(
     {
         using (clientSocket)
         {
-            var requestLine = await RoutingService.RoutingService.GetRequestLine(clientSocket);
+            var requestLine = await RoutingService.RoutingService.GetHeadersAsync(clientSocket);
             var requestPath = RoutingService.RoutingService.GetRequestPath(
                 requestLine.buffer,
                 requestLine.byteRead
             );
+            var contentLength = RoutingService.RoutingService.GetContentLength(
+                buffer: requestLine.buffer,
+                byteRead: requestLine.byteRead
+            ); // Thêm hàm lấy Content-length 
+
             var route = RoutingService.RoutingService.GetRoute(
                 prefix: requestPath,
                 routingTable: routingTables
